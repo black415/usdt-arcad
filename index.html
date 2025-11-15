@@ -1,0 +1,377 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>USDT Miner — Mini App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root{
+      --bg:#07140a; /* deep black-green */
+      --panel:#071e12;
+      --accent:#00b46a; /* tether green */
+      --accent-2:#00e07a;
+      --muted:#8fbf9f;
+      --glass: rgba(255,255,255,0.03);
+      --card: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#00110a,#07140a);font-family:var(--font);color:#e6fff2}
+    .app{display:flex;flex-direction:column;height:100vh;max-height:100vh;overflow:hidden}
+    header{padding:16px 18px;background:linear-gradient(90deg,var(--panel),#052616);display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700}
+    .title{font-weight:600;font-size:16px}
+    main{flex:1;overflow:auto;padding:18px}
+    /* splash */
+    .splash{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;text-align:center}
+    .splash h1{color:var(--accent);margin:6px 0;font-size:20px}
+    .splash p{color:var(--muted);margin:6px 0}
+    .start-btn{margin-top:12px;padding:12px 18px;border-radius:999px;background:var(--accent);border:none;color:#02210f;font-weight:700}/* center mining area */
+.card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+.mine-center{display:flex;flex-direction:column;align-items:center;gap:12px}
+.mine-circle{width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.02),rgba(0,0,0,0.25));display:flex;align-items:center;justify-content:center;position:relative}
+.mine-btn{width:140px;height:140px;border-radius:50%;background:linear-gradient(180deg,var(--accent),#009b56);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#02210f;border:6px solid rgba(255,255,255,0.06);cursor:pointer}
+.hammer{position:absolute;top:-18px;right:-18px;font-size:26px;opacity:0;transform:rotate(-30deg);transition:all 220ms ease}
+.hammer.hit{opacity:1;transform:rotate(0) translate(6px,6px)}
+.stats{display:flex;gap:12px;justify-content:center}
+.stat{background:var(--glass);padding:8px 12px;border-radius:10px;color:var(--muted);font-size:13px}
+
+/* tabs bottom */
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:linear-gradient(90deg,#02120a,#05150c);padding:8px 6px;gap:6px;justify-content:space-around;border-top:1px solid rgba(255,255,255,0.02)}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 6px;border-radius:8px;color:var(--muted);font-size:12px}
+.tab-btn.active{background:linear-gradient(90deg,rgba(0,180,106,0.12),rgba(0,224,122,0.06));color:var(--accent);}
+
+/* lists */
+.row{display:flex;gap:10px;align-items:center}
+.input,select{width:100%;padding:10px;border-radius:8px;border:none;background:#0b2a1a;color:#dfffe6}
+.small{font-size:13px;color:var(--muted)}
+
+/* leaderboard */
+.leader-item{display:flex;justify-content:space-between;padding:10px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px}
+
+/* spinner */
+.spin-area{text-align:center}
+.wheel{width:260px;height:260px;border-radius:50%;margin:10px auto;background:conic-gradient(#062914 0 30deg,#0a3c22 30deg 60deg,#06321b 60deg 90deg,#0b4a2d 90deg 120deg,#062914 120deg 150deg,#06321b 150deg 180deg,#0a3c22 180deg 210deg,#06321b 210deg 240deg,#0b4a2d 240deg 270deg,#062914 270deg 300deg,#06321b 300deg 330deg,#0a3c22 330deg 360deg);display:flex;align-items:center;justify-content:center;position:relative}
+.wheel .pointer{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:16px solid var(--accent)}
+.spin-btn{padding:10px 14px;border-radius:8px;background:var(--accent);border:none;color:#02210f;font-weight:700}
+
+footer.note{text-align:center;padding:12px;color:var(--muted);font-size:13px}
+
+@media(min-width:800px){.mine-circle{width:220px;height:220px}.mine-btn{width:180px;height:180px;font-size:36px}}
+
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="logo">₮</div>
+      <div>
+        <div class="title">Tether USDT Miner</div>
+        <div class="small">Green & black – professional</div>
+      </div>
+    </header><main id="main">
+
+  <!-- Splash / intro -->
+  <div id="splash" class="splash card">
+    <h1>You are early — let's get started</h1>
+    <p class="small">Welcome to the mini app. Quick setup and you're ready to mine, refer and earn.</p>
+    <button class="start-btn" onclick="dismissSplash()">Continue</button>
+  </div>
+
+  <!-- Main Home -->
+  <div id="homeView" style="display:none">
+    <div class="card mine-center">
+      <div class="stat">Daily reward: <strong>0.05 USDT / 24h</strong></div>
+      <div class="mine-circle">
+        <div class="hammer" id="hammer">⛏️</div>
+        <div class="mine-btn" id="mineBtn" onclick="attemptMine()">₮</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">Balance: <strong id="balance">0.000</strong> USDT</div>
+        <div class="stat">Next mine: <strong id="nextMine">Ready</strong></div>
+        <div class="stat">Total mined: <strong id="totalMined">0.000</strong></div>
+      </div>
+
+      <div style="width:100%;margin-top:10px;text-align:center;color:var(--muted);font-size:13px">Withdrawals minimum <strong>$7000</strong> — withdrawals require manual approval.</div>
+    </div>
+
+    <!-- boosters -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:600">Boosters</div><div class="small">Buy to increase earnings</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="spin-btn" onclick="buyBooster('2x',5)">2x — $5</button>
+        <button class="spin-btn" onclick="buyBooster('5x',10)">5x — $10</button>
+        <button class="spin-btn" onclick="buyBooster('15x',25)">15x — $25</button>
+      </div>
+      <div class="small" style="margin-top:10px;color:var(--muted)">Payments: USDT only. Networks: BNB, ETH, MATIC. Funds go to owner's wallet.</div>
+    </div>
+
+    <!-- spinner -->
+    <div class="card spin-area">
+      <div style="font-weight:600;margin-bottom:6px">Spin</div>
+      <div class="small">Fund your spin balance using USDT to the owner wallet, then press Spin ($5 per spin)</div>
+      <div class="wheel" id="wheel">
+        <div class="pointer"></div>
+        <div style="position:absolute;color:#dfffe6;font-weight:700">WHEEL</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+        <input id="spinAmount" class="input" placeholder="$5 per spin" value="$5">
+        <button class="spin-btn" onclick="spinWheel()">Spin</button>
+      </div>
+      <div id="spinResult" class="small" style="margin-top:8px;color:var(--muted)"></div>
+    </div>
+
+    <!-- referral & leaderboard links -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:600">Friends & Referral</div><div class="small">Invite and earn $0.05 per referral</div></div>
+      <input id="refLink" class="input" readonly>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="spin-btn" onclick="copyReferral()">Copy Link</button><button class="spin-btn" onclick="shareReferral()">Share</button></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:600">Leaderboard</div><div class="small">Real-time (server required)</div></div>
+      <div id="leaderboardList">
+        <div class="leader-item"><div>Alice</div><div>120 USDT</div></div>
+        <div class="leader-item"><div>Bob</div><div>95 USDT</div></div>
+        <div class="leader-item"><div>Charlie</div><div>70 USDT</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-weight:600">Premium</div><div class="small">Passive daily income (365 days)</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="spin-btn" onclick="buyPremium(100,1)">$100 → $1/day for 365 days</button>
+        <button class="spin-btn" onclick="buyPremium(500,5)">$500 → $5/day for 365 days</button>
+      </div>
+      <div class="small" style="margin-top:8px;color:var(--muted)">Use USDT across networks: BNB, ETH, MATIC. Funds must be sent to owner wallet address shown when initiating purchase.</div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:600">Airdrop</div>
+      <div class="small">Coming soon — tap to view more</div>
+      <div style="margin-top:8px"><button class="spin-btn" onclick="alert('Coming soon')">Airdrop</button></div>
+    </div>
+
+  </div>
+
+  <!-- Friends / referrals view (duplicate) -->
+  <div id="friendsView" style="display:none">
+    <div class="card">
+      <div style="font-weight:600">Your Referral</div>
+      <input id="refLink2" class="input" readonly>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="spin-btn" onclick="copyReferral2()">Copy</button><button class="spin-btn" onclick="shareReferral()">Share</button></div>
+    </div>
+  </div>
+
+  <!-- Withdraw view -->
+  <div id="withdrawView" style="display:none">
+    <div class="card">
+      <div style="font-weight:600">Withdraw</div>
+      <div class="small">Minimum withdrawal: $7000 — withdrawals are manual and require admin approval. Submit withdrawal request to owner wallet.</div>
+      <input id="withdrawAmt" class="input" placeholder="Amount to withdraw (USDT)">
+      <input id="withdrawAddr" class="input" placeholder="Your receiving wallet address">
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="spin-btn" onclick="requestWithdraw()">Request Withdraw</button></div>
+    </div>
+  </div>
+
+  <!-- community -->
+  <div id="communityView" style="display:none">
+    <div class="card"><div style="font-weight:600">Community</div>
+      <div class="small">Join our channels</div>
+      <div style="margin-top:8px"><a class="small" href="#" onclick="openLink('https://t.me/YourCommunity')">Telegram Group</a><br><a class="small" href="#" onclick="openLink('https://twitter.com/YourProject')">Twitter</a></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="tabs" role="navigation">
+  <div class="tab-btn active" data-target="homeView" onclick="switchTab(event)">
+    <div>Home</div>
+  </div>
+  <div class="tab-btn" data-target="friendsView" onclick="switchTab(event)">
+    <div>Friends</div>
+  </div>
+  <div class="tab-btn" data-target="withdrawView" onclick="switchTab(event)">
+    <div>Withdraw</div>
+  </div>
+  <div class="tab-btn" data-target="communityView" onclick="switchTab(event)">
+    <div>Community</div>
+  </div>
+</div>
+
+<footer class="note">Built for owner. Replace placeholder wallet addresses with your real ones before accepting payments.</footer>
+
+  </div>  <script>
+    /* ----------------------- CONFIG - replace these with your real values --------------------- */
+    const BOT_USERNAME = 'Tethercoinminingbot'; // without @
+    const OWNER = {
+      BNB: '0x0496eea98bc2181d26bd9062d667b485bbb31a5e',
+      ETH: '0x0496eea98bc2181d26bd9062d667b485bbb31a5e',
+      MATIC: '0x0496eea98bc2181d26bd9062d667b485bbb31a5e'
+    };
+    // referral reward value
+    const REFERRAL_REWARD = 0.05; // $0.05
+    const DAILY_REWARD = 0.05; // 0.05 USDT per 24h
+    const MIN_WITHDRAW = 7000; // USD equivalent
+
+    // note: persistent storage and leaderboard require a backend. This template emits events to the bot
+    // using Telegram.WebApp.sendData() so your bot can store data and process payments.
+    /* ----------------------- END CONFIG -------------------------------------------------------- */
+
+    const tg = window.Telegram.WebApp;
+    try{tg.expand()}catch(e){}
+
+    // simple local state for demo. Real app needs server-side tracking.
+    let user = {id:null, name:'Guest', balance:0, total:0, lastMine:0};
+
+    function init() {
+      // try read user info from Telegram if available
+      if(tg && tg.initDataUnsafe && tg.initDataUnsafe.user){
+        const u = tg.initDataUnsafe.user;
+        user.id = u.id || ('u'+Math.floor(Math.random()*1000000));
+        user.name = (u.first_name || 'User') + (u.last_name?(' '+u.last_name):'');
+      } else {
+        user.id = 'u'+Math.floor(Math.random()*1000000);
+      }
+
+      // referral link using your bot username and user id
+      const ref = `https://t.me/${BOT_USERNAME}?start=${user.id}`;
+      document.getElementById('refLink').value = ref;
+      document.getElementById('refLink2').value = ref;
+
+      refreshUI();
+    }
+
+    function dismissSplash(){document.getElementById('splash').style.display='none';document.getElementById('homeView').style.display='block'}
+
+    function refreshUI(){
+      document.getElementById('balance').innerText = user.balance.toFixed(3);
+      document.getElementById('totalMined').innerText = user.total.toFixed(3);
+      // next mine
+      const now = Date.now();
+      const canMineAt = user.lastMine + 24*60*60*1000;
+      if(now >= canMineAt) document.getElementById('nextMine').innerText = 'Ready';
+      else {
+        const sec = Math.max(0,Math.ceil((canMineAt-now)/1000));
+        const h = Math.floor(sec/3600); const m = Math.floor((sec%3600)/60); const s = sec%60;
+        document.getElementById('nextMine').innerText = `${h}h ${m}m ${s}s`;
+      }
+    }
+
+    function attemptMine(){
+      const now = Date.now();
+      if(now - user.lastMine < 24*60*60*1000){
+        refreshUI();
+        return alert('You can mine once every 24 hours. Check the timer.');
+      }
+      // award minimum 0.05, random bonus small amount
+      const bonus = Math.random()*0.02; // up to 0.02 extra
+      const awarded = +(DAILY_REWARD + bonus).toFixed(3);
+      user.balance += awarded; user.total += awarded; user.lastMine = now; refreshUI();
+
+      // hammer animation
+      const h = document.getElementById('hammer');
+      h.classList.add('hit'); setTimeout(()=>h.classList.remove('hit'),700);
+
+      // notify bot/server for recording credit and for owner share handling
+      sendToBot({action:'mine',userId:user.id,amount:awarded,timestamp:now});
+    }
+
+    function buyBooster(type,price){
+      // show payment modal / instructions. The real flow should use on-chain checks or payment webhook.
+      const networks = Object.keys(OWNER).join(', ');
+      const addr = prompt(`Send USDT ${price} to owner wallet. Networks: ${networks}.
+Type: ${type}
+
+Copy owner address for chosen network from console.`);
+      // In production, show QR or copyable per-network address. Here we emit purchase request to bot.
+      sendToBot({action:'buy_booster',userId:user.id,type,type,price:price});
+      alert('Purchase request sent. After payment, your booster will be activated by admin.');
+    }
+
+    function buyPremium(price,daily){
+      sendToBot({action:'buy_premium',userId:user.id,price:price,daily:daily});
+      alert('Premium purchase initiated. Please transfer USDT to owner wallet. Admin will verify.');
+    }
+
+    /* ---------------- SPIN WHEEL ---------------- */
+    function spinWheel(){
+      // require $5 per spin
+      const amt = 5; // fixed
+      // client-side check for balance (if app holds funds) - here we just simulate and instruct payment
+      const proceed = confirm('Spin costs $5. You will be asked to send USDT to the owner wallet. Continue?');
+      if(!proceed) return;
+      // spin animation: biased to 0 and 0.5
+      const outcomes = [1,0.5,100,50,0,20,10];
+      // bias weights: high weight to 0 and 0.5
+      const weights = [1,6,0.2,0.2,8,0.5,0.5];
+      const totalW = weights.reduce((a,b)=>a+b,0);
+      let r = Math.random()*totalW; let idx=0; for(let i=0;i<weights.length;i++){r-=weights[i]; if(r<=0){idx=i;break}}
+      const result = outcomes[idx];
+      // animate wheel rotation (simple)
+      const wheel = document.getElementById('wheel');
+      const deg = 360*Math.random()+ (idx*(360/outcomes.length));
+      wheel.style.transition = 'transform 3s cubic-bezier(.2,.8,.2,1)';
+      wheel.style.transform = `rotate(${deg}deg)`;
+      setTimeout(()=>{
+        wheel.style.transition = ''; wheel.style.transform = '';
+        document.getElementById('spinResult').innerText = `You won $${result}`;
+        // for paid model: instruct to pay $5 to owner before awarding
+        sendToBot({action:'spin',userId:user.id,cost:amt,result:result});
+        alert('Spin result recorded. Please send $5 USDT to owner wallet to validate spin.');
+      },3200);
+    }
+
+    /* ---------------- Referral ---------------- */
+    function copyReferral(){
+      const el = document.getElementById('refLink'); el.select(); document.execCommand('copy'); alert('Referral link copied');
+    }
+    function copyReferral2(){const el=document.getElementById('refLink2');el.select();document.execCommand('copy');alert('Copied')}
+    function shareReferral(){
+      const ref = document.getElementById('refLink').value;
+      if(navigator.share){navigator.share({title:'Join USDT Miner',text:'Join and earn USDT',url:ref})}
+      else{copyReferral();}
+    }
+
+    /* ---------------- Withdrawals ---------------- */
+    function requestWithdraw(){
+      const amt = parseFloat(document.getElementById('withdrawAmt').value);
+      const addr = document.getElementById('withdrawAddr').value.trim();
+      if(!amt || !addr) return alert('Enter amount and receiving wallet');
+      if(amt < MIN_WITHDRAW) return alert('Minimum withdrawal is $'+MIN_WITHDRAW);
+      sendToBot({action:'withdraw_request',userId:user.id,amount:amt,receiveAddress:addr});
+      alert('Withdraw request submitted. Admin will contact you.');
+    }
+
+    /* ---------------- NAV ---------------- */
+    function switchTab(e){
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      const target = e.currentTarget.getAttribute('data-target');
+      document.querySelectorAll('#main > div').forEach(d=>d.style.display='none');
+      document.getElementById(target).style.display='block';
+    }
+
+    /* ---------------- utilities & bot comms ---------------- */
+    function sendToBot(payload){
+      try{
+        if(tg && tg.sendData){
+          tg.sendData(JSON.stringify(payload));
+        } else {
+          console.log('sendToBot:',payload);
+        }
+      }catch(e){console.error('send error',e)}
+    }
+
+    function openLink(u){window.open(u,'_blank')}
+
+    // init on load
+    window.addEventListener('load',()=>{init();});
+
+  </script></body>
+  </html>
